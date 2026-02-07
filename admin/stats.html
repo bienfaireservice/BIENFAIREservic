@@ -1,0 +1,48 @@
+﻿<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Stats</title>
+  <link rel="stylesheet" href="../assets/css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><div class="logo">BF</div><div><div class="brand-name">Admin</div></div></div>
+    <nav class="nav" id="nav">
+      <a href="index.html">Dashboard</a>
+      <a href="products.html">Produits</a>
+      <a href="orders.html">Commandes</a>
+      <a href="users.html">Utilisateurs</a>
+      <a href="stats.html" class="active">Stats</a>
+      <a href="chat.html">Chat</a>
+      <a href="../index.html">Site</a>
+    </nav>
+    <div class="header-actions">
+      <button class="btn ghost" id="themeToggle">Mode</button>
+      <button class="btn ghost burger" id="navToggle">Menu</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="section reveal">
+      <h1>Statistiques</h1>
+      <div class="grid-3">
+        <div class="card"><h3>Panier moyen</h3><div id="statBasket" class="stat-number">0 FCFA</div></div>
+        <div class="card"><h3>Produits</h3><div id="statProducts" class="stat-number">0</div></div>
+        <div class="card"><h3>Rupture</h3><div id="statOut" class="stat-number">0</div></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><div>© 2026 BIEN FAIRE Shop</div></footer>
+
+  <script src="../assets/js/ai-config.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script type="module" src="../assets/js/firebase-admin-guard.js"></script>
+  <script type="module" src="../assets/js/firebase-ui.js"></script>
+  <script type="module" src="../assets/js/firebase-admin.js"></script>
+</body>
+</html>
+
+

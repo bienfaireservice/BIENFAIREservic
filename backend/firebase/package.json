@@ -1,0 +1,9 @@
+{
+  "name": "firebase-tools",
+  "private": true,
+  "dependencies": {
+    "firebase-admin": "^13.6.1",
+    "safe-buffer": "^5.2.1",
+    "whatwg-url": "^16.0.0"
+  }
+}

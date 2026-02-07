@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Admin list: only authenticated users can read their own admin doc
+    match /admins/{userId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false;
+    }
+
+    function isAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    match /users/{userId} {
+      allow read: if isAdmin();
+      // user can update own profile/presence, admin can update anything
+      allow write: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+    }
+
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /chats/{chatId} {
+      allow create: if true;
+      allow update: if true;
+      allow read: if isAdmin();
+    }
+
+    match /chats/{chatId}/messages/{messageId} {
+      allow create: if true;
+      allow read: if isAdmin();
+    }
+
+    match /faq/{faqId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

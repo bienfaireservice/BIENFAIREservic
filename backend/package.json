@@ -1,0 +1,13 @@
+{
+  "name": "bf-openai-proxy",
+  "private": true,
+  "version": "1.0.0",
+  "main": "openai-proxy.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node openai-proxy.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

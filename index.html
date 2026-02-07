@@ -1,0 +1,118 @@
+﻿<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BIEN FAIRE Shop - Accueil</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <div class="logo">BF</div>
+      <div>
+        <div class="brand-name">BIEN FAIRE Shop</div>
+        <div class="brand-tag" data-i18n="tagline">Materiel pro et acces.</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <a href="index.html" class="active" data-i18n="nav_home">Accueil</a>
+      <a href="shop.html" data-i18n="nav_shop">Boutique</a>
+      <a href="contact.html" data-i18n="nav_contact">Contact</a>
+      <a href="about.html" data-i18n="nav_about">A propos</a>
+      <a href="cart.html" class="cart-link">Panier <span id="cartCount" class="pill">0</span></a>
+      <a href="auth.html" data-i18n="nav_login">Connexion</a>
+    </nav>
+    <div class="header-actions">
+      <button class="btn ghost" id="langToggle">FR/EN</button>
+      <button class="btn ghost" id="themeToggle">Mode</button>
+      <button class="btn ghost burger" id="navToggle">Menu</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero reveal">
+      <div class="hero-content">
+        <h1 data-i18n="hero_title">Tout le materiel pro, en un clic.</h1>
+        <p data-i18n="hero_text">Imprimantes, accessoires, consommables et equipements pour particuliers et entreprises.</p>
+        <div class="hero-cta">
+          <a href="shop.html" class="btn primary" data-i18n="hero_cta">Decouvrir la boutique</a>
+          <a href="contact.html" class="btn" data-i18n="hero_contact">Contacter un conseiller</a>
+        </div>
+        <div class="hero-stats">
+          <div>
+            <div class="stat-number">24/7</div>
+            <div class="stat-label" data-i18n="hero_stat1">Commandes</div>
+          </div>
+          <div>
+            <div class="stat-number">+120</div>
+            <div class="stat-label" data-i18n="hero_stat2">References</div>
+          </div>
+          <div>
+            <div class="stat-number">CIV</div>
+            <div class="stat-label" data-i18n="hero_stat3">Livraison locale</div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-card-inner">
+          <div class="chip">BIEN FAIRE</div>
+          <h3 data-i18n="hero_card_title">Pack Bureau Essentiel</h3>
+          <p data-i18n="hero_card_text">Imprimante + toner + papier + support technique.</p>
+          <div class="price">149 000 FCFA</div>
+          <a class="btn small" href="shop.html" data-i18n="hero_card_cta">Voir le pack</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h2 data-i18n="why_title">Pourquoi BIEN FAIRE Shop ?</h2>
+      <div class="grid-3">
+        <div class="card">
+          <h3 data-i18n="why_1">Conseil pro</h3>
+          <p data-i18n="why_1_text">Choisissez le bon materiel selon votre usage.</p>
+        </div>
+        <div class="card">
+          <h3 data-i18n="why_2">Paiement flexible</h3>
+          <p data-i18n="why_2_text">WhatsApp, Mobile Money, carte en option.</p>
+        </div>
+        <div class="card">
+          <h3 data-i18n="why_3">Service rapide</h3>
+          <p data-i18n="why_3_text">Commandes traitees 24/7 avec suivi.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section reveal">
+      <h2 data-i18n="featured_title">Produits phares</h2>
+      <div id="featured" class="product-grid"></div>
+    </section>
+
+    <section class="section reveal">
+      <div class="cta-banner">
+        <div>
+          <h2 data-i18n="cta_title">Besoin d'un devis pro ?</h2>
+          <p data-i18n="cta_text">Recevez une proposition rapide par WhatsApp ou email.</p>
+        </div>
+        <a class="btn primary" href="contact.html" data-i18n="cta_btn">Demander un devis</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div>© 2026 BIEN FAIRE Shop</div>
+    <div class="footer-links">
+      <a href="terms.html" data-i18n="footer_terms">Conditions</a>
+      <a href="privacy.html" data-i18n="footer_privacy">Confidentialite</a>
+    </div>
+  </footer>
+
+  <script src="assets/js/i18n.js"></script>
+  <script src="assets/js/ai-config.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/cart.js"></script>
+  <script type="module" src="assets/js/firebase-ui.js"></script>
+</body>
+</html>
+
+

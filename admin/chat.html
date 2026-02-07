@@ -1,0 +1,91 @@
+﻿<!doctype html>
+<html lang="fr" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Admin - Chat</title>
+  <link rel="stylesheet" href="../assets/css/styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand">
+      <div class="logo">BF</div>
+      <div>
+        <div class="brand-name">Admin</div>
+      </div>
+    </div>
+    <nav class="nav" id="nav">
+      <a href="index.html">Dashboard</a>
+      <a href="products.html">Produits</a>
+      <a href="orders.html">Commandes</a>
+      <a href="users.html">Utilisateurs</a>
+      <a href="stats.html">Stats</a>
+      <a href="chat.html" class="active">Chat</a>
+      <a href="../index.html">Site</a>
+    </nav>
+    <div class="header-actions">
+      <button class="btn ghost" id="themeToggle">Mode</button>
+      <button class="btn ghost burger" id="navToggle">Menu</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="section reveal">
+      <h1>Chats clients</h1>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Sessions <span id="chatBadge" class="pill" style="display:none;">Nouveau</span></h3>
+          <div id="chatSessions" class="order-list"></div>
+        </div>
+        <div class="card">
+          <h3>Messages</h3>
+          <div id="chatMessages" class="order-list">Selectionnez une session.</div>
+          <div class="filters" style="margin-top:12px;">
+            <input class="input" id="adminChatInput" placeholder="Repondre au client..." />
+            <button class="btn small" id="adminChatSend">Envoyer</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>FAQ (chatbot)</h3>
+        <div class="filters">
+          <select class="input" id="faqCategoryFilter">
+            <option value="all">Toutes les categories</option>
+          </select>
+        </div>
+        <div class="filters">
+          <input class="input" id="faqQuestion" placeholder="Question (mots cles)" />
+          <input class="input" id="faqAnswer" placeholder="Reponse" />
+          <input class="input" id="faqCategory" placeholder="Categorie (ex: paiement, livraison)" />
+          <input class="input" id="faqScore" type="number" min="0" value="0" placeholder="Score" />
+          <button class="btn small" id="faqSave">Ajouter</button>
+        </div>
+        <div id="faqList" class="order-list"></div>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>IA Chatbot</h3>
+        <div class="filters">
+          <label class="muted" style="display:flex; align-items:center; gap:10px;">
+            <input type="checkbox" id="aiEnabled" />
+            Activer les reponses IA
+          </label>
+          <button class="btn small" id="aiSave">Enregistrer</button>
+        </div>
+        <div class="muted" id="aiStatus">Etat: inconnu</div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div>Â© 2026 BIEN FAIRE Shop</div>
+  </footer>
+
+  <script src="../assets/js/ai-config.js"></script>
+  <script src="../assets/js/app.js"></script>
+  <script type="module" src="../assets/js/firebase-admin-guard.js"></script>
+  <script type="module" src="../assets/js/firebase-ui.js"></script>
+  <script type="module" src="../assets/js/firebase-admin.js"></script>
+</body>
+</html>
+
+
