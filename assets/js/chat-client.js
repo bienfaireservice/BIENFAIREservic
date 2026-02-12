@@ -107,27 +107,41 @@
     });
   }
 
+  async function chatDocExists(chatId) {
+    try {
+      const res = await fetch(`${FIRESTORE_BASE}/chats/${chatId}`);
+      if (res.ok) return true;
+      if (res.status === 404) return false;
+      return true;
+    } catch {
+      return true;
+    }
+  }
+
   async function ensureChatDoc(chatId) {
     const user = getUserMeta();
     const now = nowIso();
+    const exists = await chatDocExists(chatId);
     try {
-      await fetch(`${FIRESTORE_BASE}/chats?documentId=${chatId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fields: {
-            createdAt: { stringValue: now },
-            status: { stringValue: "open" },
-            userName: { stringValue: user.name || "Client" },
-            userEmail: { stringValue: user.email || "" },
-            userOnline: { stringValue: "true" },
-            lastSeenAt: { stringValue: now },
-            lastMessageAt: { stringValue: now },
-            lastMessageSender: { stringValue: "system" },
-            lastMessageText: { stringValue: "Session ouverte" }
-          }
-        })
-      });
+      if (!exists) {
+        await fetch(`${FIRESTORE_BASE}/chats?documentId=${chatId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fields: {
+              createdAt: { stringValue: now },
+              status: { stringValue: "open" },
+              userName: { stringValue: user.name || "Client" },
+              userEmail: { stringValue: user.email || "" },
+              userOnline: { stringValue: "true" },
+              lastSeenAt: { stringValue: now },
+              lastMessageAt: { stringValue: now },
+              lastMessageSender: { stringValue: "system" },
+              lastMessageText: { stringValue: "Session ouverte" }
+            }
+          })
+        });
+      }
     } catch {
       // ignore
     }
@@ -245,6 +259,18 @@
 
   function isAiEnabled() {
     return window.AI_CHAT_ENABLED === true && typeof window.AI_CHAT_ENDPOINT === "string" && window.AI_CHAT_ENDPOINT.trim();
+  }
+
+  function getAiEndpoints() {
+    const list = [];
+    const primary = String(window.AI_CHAT_ENDPOINT || "").trim();
+    const fallbacks = Array.isArray(window.AI_CHAT_ENDPOINT_FALLBACKS) ? window.AI_CHAT_ENDPOINT_FALLBACKS : [];
+    if (primary) list.push(primary);
+    fallbacks.forEach((endpoint) => {
+      const value = String(endpoint || "").trim();
+      if (value && !list.includes(value)) list.push(value);
+    });
+    return list;
   }
 
   function toAiHistory(messages) {
@@ -488,26 +514,36 @@
     try {
       const historyRows = await fetchMessages(chatId);
       const siteContext = await buildSiteContext();
-      const res = await fetch(window.AI_CHAT_ENDPOINT, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userText,
-          history: toAiHistory(historyRows),
-          context: siteContext,
-          model: window.AI_CHAT_MODEL || "",
-          system: window.AI_SYSTEM_PROMPT || ""
-        })
-      });
-      if (!res.ok) {
-        const errText = await res.text().catch(() => "");
-        console.error("AI endpoint error:", res.status, errText);
-        return { reply: "", error: `AI_HTTP_${res.status}`, detail: errText };
+      const endpoints = getAiEndpoints();
+      let lastNetworkError = "";
+      for (const endpoint of endpoints) {
+        try {
+          const res = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message: userText,
+              history: toAiHistory(historyRows),
+              context: siteContext,
+              model: window.AI_CHAT_MODEL || "",
+              system: window.AI_SYSTEM_PROMPT || ""
+            })
+          });
+          if (!res.ok) {
+            const errText = await res.text().catch(() => "");
+            console.error("AI endpoint error:", endpoint, res.status, errText);
+            return { reply: "", error: `AI_HTTP_${res.status}`, detail: errText };
+          }
+          const data = await res.json();
+          const reply = String(data?.reply || "").trim();
+          if (!reply) return { reply: "", error: "AI_EMPTY_REPLY" };
+          return { reply, error: "", detail: "" };
+        } catch (err) {
+          lastNetworkError = String(err?.message || err || "network error");
+          console.error("AI request failed on endpoint:", endpoint, err);
+        }
       }
-      const data = await res.json();
-      const reply = String(data?.reply || "").trim();
-      if (!reply) return { reply: "", error: "AI_EMPTY_REPLY" };
-      return { reply, error: "", detail: "" };
+      return { reply: "", error: "AI_NETWORK", detail: lastNetworkError || "All endpoints failed" };
     } catch (err) {
       console.error("AI request failed:", err);
       return { reply: "", error: "AI_NETWORK", detail: String(err?.message || err || "") };
@@ -694,13 +730,28 @@
       });
     }
 
+    function classifySender(sender) {
+      const value = String(sender || "").trim().toLowerCase();
+      if (!value) return { role: "bot", label: "Support: " };
+      if (value === "user") return { role: "user", label: "" };
+      if (value === "admin_note") return null;
+      if (value === "admin" || value === "support") return { role: "bot", label: "Assistant(e): " };
+      if (value === "ai" || value === "assistant" || value === "bot" || value === "system") {
+        return { role: "bot", label: "IA: " };
+      }
+      return { role: "bot", label: "Support: " };
+    }
+
     function addLine(sender, text, dataUrl = "", filename = "") {
+      const senderMeta = classifySender(sender);
+      if (!senderMeta) return;
       const div = document.createElement("div");
-      div.className = `chat-msg ${sender === "user" ? "user" : "bot"}`;
-      if (sender === "admin" || sender === "ai") {
+      div.className = `chat-msg ${senderMeta.role}`;
+      if (senderMeta.role === "bot" && senderMeta.label) {
         const prefix = document.createElement("span");
-        prefix.className = `chat-msg-prefix ${sender === "admin" ? "chat-msg-prefix-admin" : "chat-msg-prefix-ai"}`;
-        prefix.textContent = sender === "admin" ? "Assistant(e): " : "IA: ";
+        const labelLower = senderMeta.label.toLowerCase();
+        prefix.className = `chat-msg-prefix ${labelLower.includes("ia") ? "chat-msg-prefix-ai" : "chat-msg-prefix-admin"}`;
+        prefix.textContent = senderMeta.label;
         const content = document.createElement("span");
         content.textContent = text || "";
         div.appendChild(prefix);
@@ -723,6 +774,7 @@
     }
 
     function processMessages(messages) {
+      let added = false;
       messages.forEach((m) => {
         const key = m.id || `${m.sender}|${m.createdAt}|${m.text}|${m.attachmentName || ""}`;
         if (rendered.has(key)) return;
@@ -731,10 +783,15 @@
           const rated = localStorage.getItem(`${RATED_KEY}_${chatId}`) === "1";
           if (ratingBox) ratingBox.style.display = rated ? "none" : "block";
         }
-        if (m.sender !== "user" && m.sender !== "admin" && m.sender !== "ai") return;
+        if (!classifySender(m.sender)) return;
         addLine(m.sender, m.text, m.attachmentDataUrl, m.attachmentName);
+        added = true;
       });
-      updateJumpDownVisibility();
+      if (added) {
+        scrollUserMessagesToBottom();
+      } else {
+        updateJumpDownVisibility();
+      }
     }
 
     async function sendAiReplyNow(lastUserText) {

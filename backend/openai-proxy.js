@@ -11,7 +11,7 @@ function sendJson(res, status, data) {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "POST, OPTIONS"
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
   });
   res.end(JSON.stringify(data));
 }
@@ -46,9 +46,13 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Headers": "Content-Type, Authorization",
-      "Access-Control-Allow-Methods": "POST, OPTIONS"
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
     });
     return res.end();
+  }
+
+  if (req.method === "GET" && req.url === "/health") {
+    return sendJson(res, 200, { ok: true, provider: pickProvider() });
   }
 
   if (req.method !== "POST" || req.url !== "/chat") {

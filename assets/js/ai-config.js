@@ -5,10 +5,54 @@
   const host = String(window.location.hostname || "").toLowerCase();
   const localHosts = ["localhost", "127.0.0.1"];
   const localEndpoint = "http://localhost:8787/chat";
+  const prodDefaultEndpoint = "https://bienfaireservic.onrender.com/chat";
+  const params = new URLSearchParams(window.location.search);
+  const queryEndpoint = String(
+    params.get("ai_endpoint") ||
+    params.get("ai") ||
+    ""
+  ).trim();
+  const shouldSaveQueryEndpoint = queryEndpoint && (
+    params.get("save_ai") === "1" ||
+    params.get("saveAi") === "1"
+  );
   const savedEndpoint = String(localStorage.getItem("bf_ai_endpoint") || "").trim();
-  const endpoint = savedEndpoint || (localHosts.includes(host) ? localEndpoint : "");
+
+  function normalizeEndpoint(raw) {
+    const value = String(raw || "").trim();
+    if (!value) return "";
+    try {
+      const url = new URL(value, window.location.origin);
+      const epHost = String(url.hostname || "").toLowerCase();
+      const isEndpointLocal = localHosts.includes(epHost);
+      const isPageLocal = localHosts.includes(host);
+      if (!isPageLocal && isEndpointLocal) return "";
+      if (window.location.protocol === "https:" && url.protocol === "http:" && !isEndpointLocal) {
+        url.protocol = "https:";
+      }
+      return url.href;
+    } catch {
+      return "";
+    }
+  }
+
+  const normalizedQueryEndpoint = normalizeEndpoint(queryEndpoint);
+  const normalizedSavedEndpoint = normalizeEndpoint(savedEndpoint);
+  const endpoint = normalizedQueryEndpoint || normalizedSavedEndpoint || (localHosts.includes(host) ? localEndpoint : prodDefaultEndpoint);
+  const fallbacks = [prodDefaultEndpoint].filter((item) => item && item !== endpoint);
+
+  if (shouldSaveQueryEndpoint) {
+    try {
+      if (normalizedQueryEndpoint) {
+        localStorage.setItem("bf_ai_endpoint", normalizedQueryEndpoint);
+      }
+    } catch {
+      // ignore storage errors
+    }
+  }
 
   window.AI_CHAT_ENDPOINT = endpoint;
+  window.AI_CHAT_ENDPOINT_FALLBACKS = fallbacks;
   window.AI_CHAT_MODEL = ""; // optional, if your proxy accepts it
   window.AI_CHAT_ENABLED = Boolean(endpoint);
 })();
