@@ -7,9 +7,19 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    function isAdmin() {
+    function isListedAdminEmail() {
       return request.auth != null &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+        request.auth.token.email != null &&
+        request.auth.token.email in [
+          "bienfaireservice@gmail.com"
+        ];
+    }
+
+    function isAdmin() {
+      return request.auth != null && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        isListedAdminEmail()
+      );
     }
 
     match /users/{userId} {
@@ -33,11 +43,13 @@ service cloud.firestore {
       allow create: if true;
       allow update: if true;
       allow read: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     match /chats/{chatId}/messages/{messageId} {
       allow create: if true;
-      allow read: if isAdmin();
+      allow read: if true;
+      allow delete: if isAdmin();
     }
 
     match /faq/{faqId} {

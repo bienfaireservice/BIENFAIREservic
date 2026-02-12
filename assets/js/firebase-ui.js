@@ -1,16 +1,48 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+const UI_CACHE_KEY = "bf_ui_user_cache";
+const firebase = {
+  ready: false,
+  auth: null,
+  db: null,
+  onAuthStateChanged: null,
+  signOut: null,
+  doc: null,
+  getDoc: null,
+  setDoc: null,
+  updateDoc: null
+};
 
 // used by admin tools
 window.currentUserEmail = "";
 
 document.documentElement.classList.remove("auth-ready");
+
+function readUiCache() {
+  try {
+    const raw = localStorage.getItem(UI_CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+function writeUiCache(data) {
+  try {
+    localStorage.setItem(UI_CACHE_KEY, JSON.stringify(data));
+  } catch {
+    // ignore
+  }
+}
+
+function clearUiCache() {
+  try {
+    localStorage.removeItem(UI_CACHE_KEY);
+  } catch {
+    // ignore
+  }
+}
 
 function ensureBadge() {
   let badge = document.querySelector("#userBadge");
@@ -77,19 +109,85 @@ function ensureLogout() {
   btn.id = "headerLogout";
   btn.className = "btn ghost";
   btn.textContent = "Se deconnecter";
-  btn.addEventListener("click", async () => {
-    await signOut(auth);
-    window.location.href = "auth.html";
-  });
+  btn.addEventListener("click", performSignOut);
   actions.appendChild(btn);
   return btn;
 }
 
-async function isAdminUser(user) {
-  if (!user) return false;
+async function performSignOut() {
+  clearUiCache();
   try {
-    const ref = doc(db, "admins", user.uid);
-    const snap = await getDoc(ref);
+    if (firebase.ready && firebase.signOut && firebase.auth) {
+      await firebase.signOut(firebase.auth);
+    }
+  } catch {
+    // ignore
+  }
+  window.location.href = "auth.html";
+}
+
+function renderHeaderForUser(view) {
+  const avatar = ensureAvatar();
+  const badge = ensureBadge();
+  const logout = ensureLogout();
+  const menu = ensureMenu();
+  if (!badge || !logout || !avatar || !menu) return;
+
+  const navLoginLinks = document.querySelectorAll('a[href="auth.html"], a[href="./auth.html"], a[data-i18n="nav_login"]');
+  const menuName = document.querySelector("#userMenuName");
+  const menuEmail = document.querySelector("#userMenuEmail");
+  const adminBadge = document.querySelector("#adminBadge");
+  const adminLink = document.querySelector("#adminLink");
+  const loginLink = document.querySelector("#menuLoginLink");
+
+  window.currentUserEmail = view.email || "";
+  badge.textContent = `Bonjour, ${view.name}`;
+  badge.href = "account.html";
+  badge.style.display = "inline-flex";
+  avatar.textContent = view.initial || "U";
+  avatar.style.display = "inline-flex";
+  logout.style.display = "inline-flex";
+  if (menuName) menuName.textContent = view.name;
+  if (menuEmail) menuEmail.textContent = view.email || "";
+  if (adminBadge) adminBadge.style.display = view.isAdmin ? "inline-flex" : "none";
+  if (adminLink) adminLink.style.display = view.isAdmin ? "inline-flex" : "none";
+  if (loginLink) loginLink.style.display = "none";
+  navLoginLinks.forEach(el => el.style.display = "none");
+}
+
+function renderHeaderLoggedOut() {
+  const avatar = ensureAvatar();
+  const badge = ensureBadge();
+  const logout = ensureLogout();
+  const menu = ensureMenu();
+  if (!badge || !logout || !avatar || !menu) return;
+
+  const navLoginLinks = document.querySelectorAll('a[href="auth.html"], a[href="./auth.html"], a[data-i18n="nav_login"]');
+  const adminBadge = document.querySelector("#adminBadge");
+  const adminLink = document.querySelector("#adminLink");
+  const loginLink = document.querySelector("#menuLoginLink");
+  const menuName = document.querySelector("#userMenuName");
+  const menuEmail = document.querySelector("#userMenuEmail");
+
+  window.currentUserEmail = "";
+  badge.textContent = "Se connecter";
+  badge.href = "auth.html";
+  badge.style.display = "inline-flex";
+  avatar.style.display = "none";
+  logout.style.display = "none";
+  if (adminBadge) adminBadge.style.display = "none";
+  if (adminLink) adminLink.style.display = "none";
+  if (loginLink) loginLink.style.display = "inline-flex";
+  if (menuName) menuName.textContent = "";
+  if (menuEmail) menuEmail.textContent = "";
+  navLoginLinks.forEach(el => el.style.display = "inline-flex");
+}
+
+async function isAdminUser(user) {
+  if (!user || !firebase.ready || !firebase.doc || !firebase.getDoc || !firebase.db) return false;
+  try {
+    const ref = firebase.doc(firebase.db, "admins", user.uid);
+    const snap = await firebase.getDoc(ref);
     if (snap.exists()) return true;
   } catch {
     // ignore
@@ -97,65 +195,90 @@ async function isAdminUser(user) {
   return false;
 }
 
-onAuthStateChanged(auth, async (user) => {
+function handleAuthState(user) {
   document.documentElement.classList.add("auth-ready");
-  const avatar = ensureAvatar();
-  const badge = ensureBadge();
-  const logout = ensureLogout();
-  const menu = ensureMenu();
-  if (!badge || !logout || !avatar || !menu) return;
-  const navLoginLinks = document.querySelectorAll('a[href="auth.html"], a[href="./auth.html"], a[data-i18n="nav_login"]');
   if (user) {
-    // Presence + last login
-    try {
-      await setDoc(doc(db, "users", user.uid), {
+    const name = user.displayName || user.email || "Compte";
+    const initial = (user.displayName || user.email || "U").trim().charAt(0).toUpperCase();
+    const email = user.email || "";
+    renderHeaderForUser({ name, email, initial, isAdmin: false });
+    writeUiCache({ name, email, initial, isAdmin: false });
+
+    // Do not block header rendering with network requests.
+    if (firebase.ready && firebase.doc && firebase.setDoc && firebase.db) {
+      firebase.setDoc(firebase.doc(firebase.db, "users", user.uid), {
         name: user.displayName || "Client",
-        email: user.email || "",
+        email,
         lastLoginAt: new Date().toISOString(),
         isOnline: true,
         lastSeenAt: new Date().toISOString()
-      }, { merge: true });
-    } catch {
-      // ignore
+      }, { merge: true }).catch(() => {
+        // ignore
+      });
     }
-    const name = user.displayName || user.email || "Compte";
-    const initial = (user.displayName || user.email || "U").trim().charAt(0).toUpperCase();
-    badge.textContent = `Bonjour, ${name}`;
-    badge.style.display = "inline-flex";
-    avatar.textContent = initial;
-    avatar.style.display = "inline-flex";
-    logout.style.display = "inline-flex";
-    const isAdmin = await isAdminUser(user);
-    const badgeEl = document.querySelector("#adminBadge");
-    if (badgeEl) badgeEl.style.display = isAdmin ? "inline-flex" : "none";
-    const adminLink = document.querySelector("#adminLink");
-    if (adminLink) adminLink.style.display = isAdmin ? "inline-flex" : "none";
-    const loginLink = document.querySelector("#menuLoginLink");
-    if (loginLink) loginLink.style.display = "none";
-    navLoginLinks.forEach(el => el.style.display = "none");
-    const menuName = document.querySelector("#userMenuName");
-    const menuEmail = document.querySelector("#userMenuEmail");
-    if (menuName) menuName.textContent = name;
-    if (menuEmail) menuEmail.textContent = user.email || "";
+
+    isAdminUser(user).then((isAdmin) => {
+      const adminBadge = document.querySelector("#adminBadge");
+      const adminLink = document.querySelector("#adminLink");
+      if (adminBadge) adminBadge.style.display = isAdmin ? "inline-flex" : "none";
+      if (adminLink) adminLink.style.display = isAdmin ? "inline-flex" : "none";
+      writeUiCache({ name, email, initial, isAdmin });
+    }).catch(() => {
+      // ignore
+    });
   } else {
-    badge.textContent = "Se connecter";
-    badge.href = "auth.html";
-    avatar.style.display = "none";
-    logout.style.display = "none";
-    const badgeEl = document.querySelector("#adminBadge");
-    if (badgeEl) badgeEl.style.display = "none";
-    const loginLink = document.querySelector("#menuLoginLink");
-    if (loginLink) loginLink.style.display = "inline-flex";
-    navLoginLinks.forEach(el => el.style.display = "inline-flex");
+    renderHeaderLoggedOut();
+    clearUiCache();
   }
-});
+}
+
+async function initFirebase() {
+  try {
+    const [{ initializeApp, getApps, getApp }, { getAuth, onAuthStateChanged, signOut }, { getFirestore, doc, getDoc, setDoc, updateDoc }] = await Promise.all([
+      import("https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"),
+      import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js")
+    ]);
+
+    const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    firebase.auth = getAuth(app);
+    firebase.db = getFirestore(app);
+    firebase.onAuthStateChanged = onAuthStateChanged;
+    firebase.signOut = signOut;
+    firebase.doc = doc;
+    firebase.getDoc = getDoc;
+    firebase.setDoc = setDoc;
+    firebase.updateDoc = updateDoc;
+    firebase.ready = true;
+
+    firebase.onAuthStateChanged(firebase.auth, handleAuthState);
+  } catch {
+    // Keep cached/local header if Firebase is unavailable.
+    document.documentElement.classList.add("auth-ready");
+  }
+}
+
+const cachedView = readUiCache();
+if (cachedView?.email && cachedView?.name) {
+  renderHeaderForUser({
+    name: cachedView.name,
+    email: cachedView.email,
+    initial: cachedView.initial || "U",
+    isAdmin: cachedView.isAdmin === true
+  });
+} else {
+  renderHeaderLoggedOut();
+}
+
+initFirebase();
 
 // Best-effort presence (set offline)
 window.addEventListener("beforeunload", async () => {
-  const u = auth.currentUser;
+  if (!firebase.ready || !firebase.auth || !firebase.doc || !firebase.updateDoc || !firebase.db) return;
+  const u = firebase.auth.currentUser;
   if (!u) return;
   try {
-    await updateDoc(doc(db, "users", u.uid), {
+    await firebase.updateDoc(firebase.doc(firebase.db, "users", u.uid), {
       isOnline: false,
       lastSeenAt: new Date().toISOString()
     });
@@ -178,10 +301,6 @@ window.addEventListener("click", (e) => {
 window.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.querySelector("#menuLogoutBtn");
   if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-      await signOut(auth);
-      window.location.href = "auth.html";
-    });
+    logoutBtn.addEventListener("click", performSignOut);
   }
 });
-    window.currentUserEmail = user.email || "";

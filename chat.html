@@ -1,9 +1,9 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="fr" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BIEN FAIRE Shop - Confidentialite</title>
+  <title>BIEN FAIRE Shop - Chat</title>
   <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
   <link rel="dns-prefetch" href="//www.gstatic.com" />
   <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
@@ -19,16 +19,17 @@
       <div class="logo">BF</div>
       <div>
         <div class="brand-name">BIEN FAIRE Shop</div>
-        <div class="brand-tag" data-i18n="tagline">Materiel pro et acces.</div>
+        <div class="brand-tag">Materiel pro et acces.</div>
       </div>
     </div>
     <nav class="nav" id="nav">
-      <a href="index.html" data-i18n="nav_home">Accueil</a>
-      <a href="shop.html" data-i18n="nav_shop">Boutique</a>
-      <a href="contact.html" data-i18n="nav_contact">Contact</a>
-      <a href="about.html" data-i18n="nav_about">A propos</a>
+      <a href="index.html">Accueil</a>
+      <a href="shop.html">Boutique</a>
+      <a href="contact.html">Contact</a>
+      <a href="about.html">A propos</a>
       <a href="cart.html" class="cart-link">Panier <span id="cartCount" class="pill">0</span></a>
-      <a href="auth.html" data-i18n="nav_login">Connexion</a>
+      <a href="chat.html" class="active">Chat</a>
+      <a href="auth.html">Connexion</a>
     </nav>
     <div class="header-actions">
       <button class="btn ghost" id="langToggle">FR/EN</button>
@@ -39,23 +40,17 @@
 
   <main>
     <section class="section reveal">
-      <h1 data-i18n="privacy_title">Politique de confidentialite</h1>
-      <div class="card">
-        <p data-i18n="privacy_text">Ce site utilise des donnees pour gerer les commandes. Adaptez le texte aux lois locales.</p>
-        <ul class="list">
-          <li data-i18n="privacy_1">Donnees clients proteges.</li>
-          <li data-i18n="privacy_2">Aucune revente de donnees.</li>
-          <li data-i18n="privacy_3">Suppression sur demande.</li>
-        </ul>
-      </div>
+      <h1>Assistant</h1>
+      <p class="muted">Discutez directement avec l'assistant et notre equipe support.</p>
+      <div id="chatPageMount"></div>
     </section>
   </main>
 
   <footer class="site-footer">
     <div>© 2026 BIEN FAIRE Shop</div>
     <div class="footer-links">
-      <a href="terms.html" data-i18n="footer_terms">Conditions</a>
-      <a href="privacy.html" class="active" data-i18n="footer_privacy">Confidentialite</a>
+      <a href="terms.html">Conditions</a>
+      <a href="privacy.html">Confidentialite</a>
     </div>
   </footer>
 
@@ -67,5 +62,3 @@
   <script type="module" src="assets/js/firebase-ui.js"></script>
 </body>
 </html>
-
-

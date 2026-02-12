@@ -4,6 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Admin - Chat</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg" />
+  <link rel="dns-prefetch" href="//www.gstatic.com" />
+  <link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+  <link rel="modulepreload" href="../assets/js/firebase-ui.js" />
+  <link rel="preload" href="../assets/css/styles.css" as="style" />
+  <link rel="preload" href="../assets/js/i18n.js" as="script" />
+  <link rel="preload" href="../assets/js/app.js" as="script" />
   <link rel="stylesheet" href="../assets/css/styles.css" />
 </head>
 <body>
@@ -32,46 +39,99 @@
   <main>
     <section class="section reveal">
       <h1>Chats clients</h1>
+      <div class="grid-3" id="chatKpis" style="margin-bottom:14px;">
+        <div class="card">
+          <div class="muted">Tickets ouverts</div>
+          <h3 id="kpiOpenChats">0</h3>
+        </div>
+        <div class="card">
+          <div class="muted">Assignés à moi</div>
+          <h3 id="kpiAssignedToMe">0</h3>
+        </div>
+        <div class="card">
+          <div class="muted">Urgents</div>
+          <h3 id="kpiUrgentChats">0</h3>
+        </div>
+        <div class="card">
+          <div class="muted">1ere reponse moyenne</div>
+          <h3 id="kpiFirstReplyAvg">0m</h3>
+        </div>
+        <div class="card">
+          <div class="muted">Volumes aujourd'hui</div>
+          <h3 id="kpiVolumeToday">0</h3>
+        </div>
+        <div class="card">
+          <div class="muted">Resolus aujourd'hui</div>
+          <h3 id="kpiResolvedToday">0</h3>
+        </div>
+      </div>
       <div class="grid-2">
         <div class="card">
           <h3>Sessions <span id="chatBadge" class="pill" style="display:none;">Nouveau</span></h3>
+          <div class="filters" style="margin:10px 0;">
+            <button class="btn small" id="clearChatHistoryBtn" type="button">Supprimer historique</button>
+            <button class="btn small" id="cleanupSystemMessagesBtn" type="button">Nettoyer system/vu</button>
+          </div>
+          <div class="filters">
+            <select class="input" id="chatStatusFilter" style="max-width:200px;">
+              <option value="all">Tous statuts</option>
+              <option value="open">Open</option>
+              <option value="human">Human</option>
+              <option value="closed">Closed</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          <div class="filters">
+            <button class="btn small" id="chatAssignBtn" type="button">M'assigner ce chat</button>
+            <select class="input" id="chatPriority" style="max-width:180px;">
+              <option value="normal">Priorite normale</option>
+              <option value="high">Priorite haute</option>
+              <option value="urgent">Priorite urgente</option>
+            </select>
+          </div>
+          <div class="filters">
+            <input class="input" id="chatTransferTo" placeholder="Transferer a (email admin)" />
+            <button class="btn small" id="chatTransferBtn" type="button">Transferer</button>
+            <button class="btn small" id="chatCloseBtn" type="button">Clore chat</button>
+          </div>
           <div id="chatSessions" class="order-list"></div>
         </div>
         <div class="card">
-          <h3>Messages</h3>
+          <h3>Messages <button class="btn small" id="refreshChatBtn" type="button" style="margin-left:8px;">Actualiser</button> <button class="btn small" id="chatJumpBottomBtn" type="button" title="Aller en bas">↓</button></h3>
+          <div id="chatMeta" class="order-list">Selectionnez une session.</div>
+          <div class="filters">
+            <input class="input" id="chatSearchInput" placeholder="Rechercher dans la conversation..." />
+            <label class="muted" style="display:flex; align-items:center; gap:8px;">
+              <input type="checkbox" id="chatOnlyNotes" />
+              Notes internes seulement
+            </label>
+            <button class="btn small" id="chatExportCsvBtn" type="button">Exporter CSV</button>
+            <button class="btn small" id="chatExportPdfBtn" type="button">Exporter PDF</button>
+          </div>
+          <div class="filters" id="quickReplies"></div>
           <div id="chatMessages" class="order-list">Selectionnez une session.</div>
           <div class="filters" style="margin-top:12px;">
             <input class="input" id="adminChatInput" placeholder="Repondre au client..." />
             <button class="btn small" id="adminChatSend">Envoyer</button>
+            <button class="btn small" id="adminChatSendNote" type="button">Note interne</button>
+            <input class="input" id="adminChatFile" type="file" />
           </div>
         </div>
       </div>
       <div class="card" style="margin-top:16px;">
-        <h3>FAQ (chatbot)</h3>
-        <div class="filters">
-          <select class="input" id="faqCategoryFilter">
-            <option value="all">Toutes les categories</option>
-          </select>
-        </div>
-        <div class="filters">
-          <input class="input" id="faqQuestion" placeholder="Question (mots cles)" />
-          <input class="input" id="faqAnswer" placeholder="Reponse" />
-          <input class="input" id="faqCategory" placeholder="Categorie (ex: paiement, livraison)" />
-          <input class="input" id="faqScore" type="number" min="0" value="0" placeholder="Score" />
-          <button class="btn small" id="faqSave">Ajouter</button>
-        </div>
-        <div id="faqList" class="order-list"></div>
+        <h3>Historique client</h3>
+        <div id="customerHistory" class="order-list">Aucun historique client.</div>
       </div>
       <div class="card" style="margin-top:16px;">
-        <h3>IA Chatbot</h3>
+        <h3>Automations</h3>
         <div class="filters">
-          <label class="muted" style="display:flex; align-items:center; gap:10px;">
-            <input type="checkbox" id="aiEnabled" />
-            Activer les reponses IA
-          </label>
-          <button class="btn small" id="aiSave">Enregistrer</button>
+          <input class="input" id="webhookEndpoint" placeholder="Webhook notifications (https://...)" />
+          <button class="btn small" id="saveWebhookBtn" type="button">Sauver webhook</button>
         </div>
-        <div class="muted" id="aiStatus">Etat: inconnu</div>
+        <div class="filters">
+          <input class="input" id="autoCloseHours" type="number" min="1" value="24" placeholder="Auto-close apres X heures" />
+          <button class="btn small" id="applyAutoCloseBtn" type="button">Appliquer auto-close</button>
+        </div>
       </div>
     </section>
   </main>
@@ -80,11 +140,10 @@
     <div>Â© 2026 BIEN FAIRE Shop</div>
   </footer>
 
-  <script src="../assets/js/ai-config.js"></script>
   <script src="../assets/js/app.js"></script>
   <script type="module" src="../assets/js/firebase-admin-guard.js"></script>
   <script type="module" src="../assets/js/firebase-ui.js"></script>
-  <script type="module" src="../assets/js/firebase-admin.js"></script>
+  <script type="module" src="../assets/js/admin-chat.js"></script>
 </body>
 </html>
 

@@ -3,6 +3,8 @@ import {
   getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   sendPasswordResetEmail,
   signOut,
   updateProfile,
@@ -26,6 +28,18 @@ function setStatus(el, msg, ok = true) {
   if (!el) return;
   el.textContent = msg;
   el.style.color = ok ? "var(--primary)" : "#b91c1c";
+}
+
+async function upsertUserDoc(user) {
+  if (!user) return;
+  const fallbackName = user.displayName || user.email || "Client";
+  await setDoc(doc(db, "users", user.uid), {
+    name: fallbackName,
+    email: user.email || "",
+    banned: false,
+    createdAt: new Date().toISOString(),
+    lastLoginAt: new Date().toISOString()
+  }, { merge: true });
 }
 
 async function signup() {
@@ -70,6 +84,32 @@ async function login() {
   }
 }
 
+async function loginWithGoogle() {
+  const status = qs("#authStatus");
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+
+  try {
+    const cred = await signInWithPopup(auth, provider);
+    const userDoc = await getDoc(doc(db, "users", cred.user.uid));
+    if (userDoc.exists() && userDoc.data()?.banned) {
+      setStatus(status, "Compte suspendu. Contactez l'administrateur.", false);
+      await signOut(auth);
+      return;
+    }
+    await upsertUserDoc(cred.user);
+    setStatus(status, "Connexion Google reussie. Redirection...", true);
+    window.location.href = "account.html";
+  } catch (err) {
+    const code = err?.code || "";
+    if (code === "auth/popup-blocked") {
+      setStatus(status, "Popup Google bloquee. Autorisez les popups puis reessayez.", false);
+      return;
+    }
+    setStatus(status, err.message || "Connexion Google impossible.", false);
+  }
+}
+
 async function resetPassword() {
   const email = qs("#loginEmail")?.value?.trim() || "";
   const status = qs("#authStatus");
@@ -85,9 +125,11 @@ async function resetPassword() {
 function bindAuth() {
   const signupBtn = qs("#signupBtn");
   const loginBtn = qs("#loginBtn");
+  const googleLoginBtn = qs("#googleLoginBtn");
   const resetBtn = qs("#resetBtn");
   signupBtn?.addEventListener("click", signup);
   loginBtn?.addEventListener("click", login);
+  googleLoginBtn?.addEventListener("click", loginWithGoogle);
   resetBtn?.addEventListener("click", resetPassword);
 }
 
